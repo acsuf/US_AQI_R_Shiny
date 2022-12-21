@@ -1,0 +1,5 @@
+# Mac folder file
+.DS_Store
+
+# csv (too large)
+.csv
