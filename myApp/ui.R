@@ -6,28 +6,56 @@
 #
 #    http://shiny.rstudio.com/
 #
-
-library(shiny)
-
-# Define UI for application that draws a histogram
 shinyUI(fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins
+  
+  # Title
+  headerPanel("US AQI"),
     sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+      
+      sidebarPanel(
+        sliderInput(inputId = "Drange", 
+                    label = "Time", 
+                    min = as.POSIXct("2022-01-01"), 
+                    max =as.POSIXct("2022-05-31"), 
+                    value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+                    timeFormat="%b %d %Y"),
+        
+        selectInput(
+          inputId = 'choose_state', 
+          label = 'State',
+          choices = c('All', 
+                      sort(unique(df$state_name))),
+          selected = 'All'
         ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
-    )
+        selectInput(
+          inputId = 'choose_param', 
+          label = 'Measurement',
+          choices = c('All', 
+                      sort(unique(df$Defining.Parameter))),
+          selected = 'All'
+        ),
+      ),
+      
+      mainPanel(
+  
+  fluidRow(
+    column(12,
+           tabsetPanel(id = "ui",
+                       tabPanel("Map",
+                                column(12, 
+                                       shinycssloaders::withSpinner(
+                                         leaflet::leafletOutput(
+                                           outputId ="map", height="600px"
+                                           ),
+                                         size=2
+                                         , color="#FF0000")
+                                       )
+                                 ),
+                       tabPanel('Time Series',
+                                plotOutput('time_ser', height = 250))
+                      )
+           ),
+    ))
+  )
 ))
+

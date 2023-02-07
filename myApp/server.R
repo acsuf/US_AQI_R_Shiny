@@ -1,28 +1,48 @@
-#
-# This is the server logic of a Shiny web application. You can run the
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
+states = states(cb = TRUE, progress_bar= FALSE)
 library(shiny)
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
-
-    output$distPlot <- renderPlot({
-
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x) , max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-
-    })
-
+shinyServer(function(input, output, session) {
+  # Create map
+  map = createLeafletMap(session, 'map')
+  session$onFlushed(once=T, function(){
+    observe({
+    output$map = renderLeaflet({
+      leaflet(data = df %>%
+                select(state_name, state_id, city_ascii, lat, lng) %>%
+                distinct()) %>%
+        addTiles() %>%
+        addPolygons(data = states, opacity = 0.3, fill = FALSE, color = 'black', stroke = FALSE
+        ) %>%
+        addProviderTiles(providers$Stamen.TonerLite,
+                         options = providerTileOptions(noWrap = TRUE)
+        ) %>%
+        addCircleMarkers(
+          lat = ~lat, lng = ~lng, color = "blue", radius = 2
+        )
+    })})
+  })  
+  
+  date_range = reactive({
+    cbind(input$Drange[1],input$Drange[2])
+  })
+  output$SliderText = renderText({date_range()})
+  
+  
+  ######### REACTIVE ##########
+  which_df = reactive({
+    df %>%
+      filter(between(df$Date, input$Drange[1], input$Drange[2])) %>%
+      filter(input$choose_state == state_name | input$choose_state == 'All') %>%
+      filter(input$choose_param == Defining.Parameter | input$choose_param == 'All')
+  })
+  
+  which_loc = reactive({
+    df %>%
+      filter(between(df$Date, input$Drange[1], input$Drange[2])) %>%
+      select(state_name, state_id, city_ascii, lat, lng) %>%
+      distinct()
+  })
 })
+  
