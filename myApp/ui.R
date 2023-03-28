@@ -14,7 +14,7 @@ shinyUI(fluidPage(
       
       sidebarPanel(
         sliderInput(inputId = "Drange", 
-                    label = "Time", 
+                    label = "Select date range", 
                     min = as.POSIXct("2022-01-01"), 
                     max =as.POSIXct("2022-05-31"), 
                     value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
@@ -24,15 +24,14 @@ shinyUI(fluidPage(
           inputId = 'choose_state', 
           label = 'State',
           choices = c('All', 
-                      sort(unique(df$state_name))),
-          selected = 'All'
+                      sort(unique(df$state))),
+          selected = 'All', multiple = TRUE
         ),
         selectInput(
           inputId = 'choose_param', 
           label = 'Measurement',
-          choices = c('All', 
-                      sort(unique(df$Defining.Parameter))),
-          selected = 'All'
+          choices = c(sort(unique(df$Defining.Parameter))),
+          selected = 'PM2.5'
         ),
       ),
       
