@@ -9,14 +9,14 @@ library(mapview)
 library(leaflet)
 library(zoo)
 
-df = read.csv('testing.csv') %>% filter(Defining.Parameter == 'PM2.5' | Defining.Parameter == 'Ozone')
+df = read.csv('testing.csv') #%>% filter(Defining.Parameter == 'PM2.5' | Defining.Parameter == 'Ozone')
 df$Date = as.POSIXct(df$Date)
 df$month = month(df$Date)
 df$year = year(df$Date)
 month_names <- c("January", "February", "March", "April", "May", "June",
                  "July", "August", "September", "October", "November", "December")
 df$month <- month_names[df$month]
-
+df$month <- factor(df$month, levels = month_names)
 ######### Time series ############################################
 
 plot_aqi_city <- function(df, cities) {
@@ -97,10 +97,11 @@ plot_aqi_city_boxplots_total <- function(df, city1, city2) {
 
  ############# Scatter ##################################
 
-plot_aqi_sc <- function(df) {
+plot_aqi_sc <- function(df, param) {
+  df <- df %>% group_by(city_full) %>% summarize(density = mean(density), AQI = mean(AQI))
   ggplot(df, aes(x = density, y = AQI)) +
     geom_point() +
-    geom_smooth(method = "lm", se = TRUE)
+    geom_smooth(method = "lm", se = TRUE) + labs(title = 'Population Density vs Average AQI of cities.', x= 'Population Density', y = paste0('AQI (', param, ')'))
 }
 
 ### Bars ###
@@ -165,16 +166,24 @@ aqi_summary_ordered <- function(summ_df, orientation, metric) {
   if (orientation == "Best") {
     df_subset <- summ_df %>%
       arrange(!!sym(colname)) %>%
-      head(5)
+      head(10) 
   } else if (orientation == "Worst") {
     df_subset <- summ_df %>%
       arrange(-!!sym(colname)) %>%
-      head(5)
+      head(10) 
   }
+  # if ("state" %in% colnames(df_subset)) {
+  #   df_subset$state <- factor(df_subset$state, levels = order(df_subset[colname]))
+  # }
+  # if ("city_full" %in% colnames(df_subset)) {
+  #   df_subset$city_full <- factor(df_subset$city_full, levels = order(df_subset[colname]))
+  # }
   df_subset
 }
 
-aqi_city_barplot <- function(df, orientation, metric) {
+
+aqi_city_barplot <- function(
+    df, orientation, metric) {
   # Determine which column to use based on selection2
   if (metric == "Average") {
     colname <- "avg_aqi"
@@ -187,22 +196,14 @@ aqi_city_barplot <- function(df, orientation, metric) {
   } else if (metric == "Ratio of Bad Days") {
     colname <- "above_x_pct"
   }
-  # 
-  # # Determine whether to order in ascending or descending order based on selection1
-  # if (orientation == "Best") {
-  #   df_subset <- df %>%
-  #     arrange(!!sym(colname)) %>%
-  #     head(5)
-  # } else if (orientation == "Worst") {
-  #   df_subset <- df %>%
-  #     arrange(-!!sym(colname)) %>%
-  #     head(5)
-  # }
+
+  df <- df %>%
+    mutate(city_full = reorder(city_full, !!sym(colname)))
 
   # Create the plot
   ggplot(df, aes(x = city_full, y = !!sym(colname), fill = city_full)) +
     geom_bar(stat = "identity") +
-    labs(title = paste0("Top 5 cities by ", metric, ", ordered by ", orientation),
+    labs(title = paste0("Top 10 ", orientation," Cities by ", metric),
          x = "City",
          y = metric)
 }
@@ -222,10 +223,13 @@ aqi_state_barplot <- function(df, orientation, metric) {
   } else if (metric == "Ratio of Bad Days") {
     colname <- "above_x_pct"
   }
+  
+  df <- df %>%
+    mutate(state = reorder(state, !!sym(colname)))
 # Create the plot
 ggplot(df, aes(x = state, y = !!sym(colname), fill = state)) +
   geom_bar(stat = "identity") +
-  labs(title = paste0("Top 5 cities by ", metric, ", ordered by ", orientation),
+  labs(title = paste0("Top 10 ", orientation, " States by ", metric),
        x = "State",
        y = metric)
 }
@@ -238,8 +242,8 @@ ggplot(df, aes(x = state, y = !!sym(colname), fill = state)) +
 
 assign_category <- function(dataframe) {
   # Define AQI breakpoints and corresponding categories
-  breakpoints <- c(0, 50, 100, 150, 200, 300, 500)
-  categories <- c("Good", "Moderate", "Unhealthy for Sensitive Groups", "Unhealthy",
+  breakpoints <- c(0, 25, 50, 100, 150, 200, 300, 500)
+  categories <- c("Very Good", "Good", "Moderate", "Unhealthy for Sensitive Groups", "Unhealthy",
                   "Very Unhealthy", "Hazardous")
   
   # Use cut function to assign category based on AQI value
@@ -256,8 +260,8 @@ create_map <- function(dataframe) {
     addTiles()
   
   # Define a color palette for the categories
-  color_palette <- colorFactor(c("green", "yellow", "orange", "red", "purple", "black"),
-                               levels = c("Good", "Moderate", "Unhealthy for Sensitive Groups", 
+  color_palette <- colorFactor(c("darkgreen", "green", "yellow", "orange", "red", "purple", "black"),
+                               levels = c("Very Good", "Good", "Moderate", "Unhealthy for Sensitive Groups", 
                                           "Unhealthy","Very Unhealthy", "Hazardous"))
   
   # Construct circle markers with colors based on quality column
@@ -276,10 +280,13 @@ create_map <- function(dataframe) {
                                        )       
                         )
   m <- addCircleMarkers(m, data = markers, lng = ~lng, lat = ~lat, color = ~color, radius = ~radius, popup = ~popup)
-  
-  # Calculate bounding box of markers and set view accordingly
-  #m <- fitBounds(m)
-  
+
+  # Add a legend to the map
+  m <- addLegend(m, position = "bottomright",
+                 colors = c("darkgreen", "green", "yellow", "orange", "red", "purple", "black"),
+                 labels = c("Very Good", "Good", "Moderate", "Unhealthy for Sensitive Groups",
+                            "Unhealthy","Very Unhealthy", "Hazardous"),
+                 title = "Air Quality")
   # Return the map
   return(m)
 }

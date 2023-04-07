@@ -18,16 +18,16 @@ shinyUI(fluidPage(
           selectInput(
             inputId = "Temporal",
             label = "Select temporal inspection method",
-            choices = c("Range", "Month"),
+            choices = c("Range", "Month", 'Cycle'),
             selected = "Range"
           ),
           conditionalPanel(
             condition = "input.Temporal == 'Range'",
             sliderInput(inputId = "Drange", 
               label = "Select date range", 
-              min = as.POSIXct("2022-01-01"), 
+              min = as.POSIXct("2016-01-01"), 
               max =as.POSIXct("2022-05-31"), 
-              value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+              value= c(as.POSIXct("2016-01-01"), as.POSIXct("2022-05-30")), 
               timeFormat="%b %d %Y"),
           ),
           conditionalPanel(
@@ -42,6 +42,16 @@ shinyUI(fluidPage(
               selected = "January",
               multiple = TRUE
             )
+          ),
+          conditionalPanel(
+            condition = "input.Temporal == 'Cycle'",
+            sliderTextInput(
+              inputId = 'cMonth', 
+              label = "Cycle through months", 
+              choices = month_names, 
+              selected = month_names[1], 
+              animate = animationOptions(interval = 2000)
+              )
           ),
           selectInput(
             inputId = 'choose_state', 
@@ -62,16 +72,16 @@ shinyUI(fluidPage(
           condition = "input.ui == 'Time Series'",
           sliderInput(inputId = "Drange_TS", 
                       label = "Select date range", 
-                      min = as.POSIXct("2022-01-01"), 
+                      min = as.POSIXct("2016-01-01"), 
                       max =as.POSIXct("2022-05-31"), 
-                      value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+                      value= c(as.POSIXct("2016-01-01"), as.POSIXct("2022-05-30")), 
                       timeFormat="%b %d %Y"
                       ),
           selectInput(
             inputId = 'whereabouts',
             label = 'Select comparison method',
             choices = c('Compare within states', 'Compare between states'),
-            selected = 'Compare within states'
+            selected = 'Compare between states'
             ),
 
           conditionalPanel(
@@ -112,9 +122,9 @@ shinyUI(fluidPage(
           condition = "input.ui == 'Compare'",
           sliderInput(inputId = "Drange_comp", 
                       label = "Select date range", 
-                      min = as.POSIXct("2022-01-01"), 
+                      min = as.POSIXct("2016-01-01"), 
                       max =as.POSIXct("2022-05-31"), 
-                      value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+                      value= c(as.POSIXct("2016-01-01"), as.POSIXct("2022-05-30")), 
                       timeFormat="%b %d %Y"
           ),
           selectInput(
@@ -176,9 +186,9 @@ shinyUI(fluidPage(
             condition = "input.Temporal_sc == 'Range'",
             sliderInput(inputId = "Drange_sc", 
               label = "Select date range", 
-              min = as.POSIXct("2022-01-01"), 
+              min = as.POSIXct("2016-01-01"), 
               max =as.POSIXct("2022-05-31"), 
-              value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+              value= c(as.POSIXct("2016-01-01"), as.POSIXct("2022-05-30")), 
               timeFormat="%b %d %Y"),
           ),
           conditionalPanel(
@@ -215,9 +225,9 @@ shinyUI(fluidPage(
             condition = "input.Temporal_b == 'Range'",
             sliderInput(inputId = "Drange_b", 
                         label = "Select date range", 
-                        min = as.POSIXct("2022-01-01"), 
+                        min = as.POSIXct("2016-01-01"), 
                         max =as.POSIXct("2022-05-31"), 
-                        value= c(as.POSIXct("2022-01-01"), as.POSIXct("2022-05-30")), 
+                        value= c(as.POSIXct("2016-01-01"), as.POSIXct("2022-05-30")), 
                         timeFormat="%b %d %Y"),
           ),
           conditionalPanel(
@@ -297,12 +307,12 @@ shinyUI(fluidPage(
             tabPanel('Compare',
               plotOutput('comp')
               ),
-            tabPanel('Scatter',
-              plotOutput('scatter')
-              ),
-            tabPanel('Best and Worst Places to Live',
+            tabPanel('Best and Worst Locations',
               plotOutput('bars')
-              )
+              ),
+            tabPanel('Scatter',
+                     plotOutput('scatter')
+            )
             )
           )
         )

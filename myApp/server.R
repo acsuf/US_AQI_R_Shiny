@@ -12,6 +12,7 @@ shinyServer(function(input, output, session) {
   output$map <- renderLeaflet({
     create_map(map_df())
   })
+
   
   output$time_ser <- renderPlot({
     if (input$whereabouts == 'Compare within states') {
@@ -39,7 +40,7 @@ shinyServer(function(input, output, session) {
   
   
   output$scatter <- renderPlot({
-    plot_aqi_sc(sc_df())
+    plot_aqi_sc(sc_df(), input$choose_param_sc)
   })
   
   output$bars <- renderPlot({
@@ -116,6 +117,15 @@ shinyServer(function(input, output, session) {
     summarize(min = min(AQI), max = max(AQI), avg = round(mean(AQI), digits = 2), median = median(AQI), count = n()) %>% ungroup() %>%
     assign_category()
   }
+  else if (input$Temporal == "Cycle") {
+    df %>%
+      filter(input$cMonth == month) %>%
+      filter(input$choose_state == state | input$choose_state == 'All') %>%
+      filter(input$choose_param == Defining.Parameter | input$choose_param == 'All') %>%
+      group_by(state, state_id, city, lat, lng, Defining.Parameter) %>% 
+      summarize(min = min(AQI), max = max(AQI), avg = round(mean(AQI), digits = 2), median = median(AQI), count = n()) %>% ungroup() %>%
+      assign_category()
+    }  
   })
 
   ## TS ##
