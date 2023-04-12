@@ -9,7 +9,7 @@ library(mapview)
 library(leaflet)
 library(zoo)
 
-df = read.csv('testing.csv') #%>% filter(Defining.Parameter == 'PM2.5' | Defining.Parameter == 'Ozone')
+df = read.csv('US_AQI(2016-2022).csv') #%>% filter(Defining.Parameter == 'PM2.5' | Defining.Parameter == 'Ozone')
 df$Date = as.POSIXct(df$Date)
 df$month = month(df$Date)
 df$year = year(df$Date)
